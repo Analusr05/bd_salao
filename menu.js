@@ -63,17 +63,17 @@ function perguntar(pergunta) {
 
 async function mostrarMenu() {
   console.clear();
-  console.log("SISTEMA SALÃO DE BELEZA");
+  console.log("SISTEMA SALAO DE BELEZA");
   console.log("");
   console.log("MENU PRINCIPAL:");
   console.log("1. Clientes");
-  console.log("2. Funcionários");
+  console.log("2. Funcionarios");
   console.log("3. Agenda");
   console.log("4. Procedimentos");
   console.log("5. Sair");
   console.log("");
 
-  const opcao = await perguntar("Escolha uma opção: ");
+  const opcao = await perguntar("Escolha uma opcao: ");
 
   switch (opcao) {
     case "1":
@@ -93,7 +93,7 @@ async function mostrarMenu() {
       rl.close();
       process.exit();
     default:
-      console.log("Opção inválida!");
+      console.log("Opcao invalida!");
       await aguardarEnter();
       await mostrarMenu();
   }
@@ -104,7 +104,8 @@ async function menuClientes() {
   console.log("MENU CLIENTES:");
   console.log("1. Listar todos clientes");
   console.log("2. Criar novo cliente");
-  console.log("3. Voltar");
+  console.log("3. Atualizar cliente");
+  console.log("4. Voltar");
   console.log("");
 
   const opcao = await perguntar("Escolha: ");
@@ -117,10 +118,13 @@ async function menuClientes() {
       await criarCliente();
       break;
     case "3":
+      await atualizarCliente();
+      break;
+    case "4":
       await mostrarMenu();
       break;
     default:
-      console.log("Opção inválida!");
+      console.log("Opcao invalida!");
       await aguardarEnter();
       await menuClientes();
   }
@@ -144,7 +148,7 @@ async function listarClientes() {
       if (clientes.length > 0) {
         clientes.forEach((cliente, index) => {
           console.log(
-            `${index + 1}. ID: ${cliente.id_cliente} | Nome: ${cliente.nome} | Tel: ${cliente.telefone} | Email: ${cliente.email}`,
+            `${index + 1}. ID: ${cliente.id_cliente} | Nome: ${cliente.nome} | Tel: ${cliente.telefone} | Email: ${cliente.email}`
           );
         });
         console.log(`\nTotal: ${clientes.length} clientes`);
@@ -155,7 +159,7 @@ async function listarClientes() {
       console.log("Erro:", resultado.statusCode, resultado.data);
     }
   } catch (error) {
-    console.log("Erro de conexão:", error.message);
+    console.log("Erro de conexao:", error.message);
   }
   await aguardarEnter();
   await menuClientes();
@@ -164,7 +168,7 @@ async function listarClientes() {
 async function criarCliente() {
   console.log("\nCriar novo cliente:");
   const nome = await perguntar("Nome: ");
-  const cpf = await perguntar("CPF (11 dígitos): ");
+  const cpf = await perguntar("CPF (11 digitos): ");
   const telefone = await perguntar("Telefone: ");
   const email = await perguntar("Email: ");
 
@@ -176,316 +180,77 @@ async function criarCliente() {
       email,
     });
 
-    console.log("\nResposta da API:");
-    console.log("Status:", resultado.statusCode);
-
     if (resultado.statusCode === 201) {
-      console.log("Cliente criado com sucesso!");
+      console.log("\nCliente criado com sucesso!");
       console.log("Dados:", JSON.stringify(resultado.data, null, 2));
     } else {
-      console.log("Não foi possível criar o cliente:", resultado.data);
+      console.log("\nNao foi possivel criar o cliente:", resultado.data);
     }
   } catch (error) {
-    console.log("Erro de conexão:", error.message);
+    console.log("Erro de conexao:", error.message);
   }
   await aguardarEnter();
   await menuClientes();
 }
 
-async function menuAgenda() {
-  console.clear();
-  console.log("MENU AGENDA:");
-  console.log("1. Ver agenda completa");
-  console.log("2. Ver agenda por funcionário");
-  console.log("3. Criar agendamento");
-  console.log("4. Cancelar agendamento");
-  console.log("5. Marcar como concluído");
-  console.log("6. Voltar");
-  console.log("");
-
-  const opcao = await perguntar("Escolha: ");
-
-  switch (opcao) {
-    case "1":
-      await verAgendaCompleta();
-      break;
-    case "2":
-      await verAgendaPorFuncionario();
-      break;
-    case "3":
-      await criarAgendamento();
-      break;
-    case "4":
-      await cancelarAgendamento();
-      break;
-    case "5":
-      await concluirAgendamento();
-      break;
-    case "6":
-      await mostrarMenu();
-      break;
-    default:
-      console.log("Opção inválida!");
-      await aguardarEnter();
-      await menuAgenda();
-  }
-}
-
-async function verAgendaCompleta() {
-  console.log("\nBuscando agenda completa...");
+async function atualizarCliente() {
+  console.log("\nListando clientes para atualizar...");
   try {
-    let resultado = await fazerRequisicao("GET", "/agenda-completa");
-
-    if (resultado.statusCode === 404) {
-      console.log(
-        "Rota /agenda/completa não encontrada, tentando /agenda...",
-      );
-      resultado = await fazerRequisicao("GET", "/agenda");
-    }
+    const resultado = await fazerRequisicao("GET", "/clientes");
 
     if (resultado.statusCode === 200) {
-      console.log("Agenda encontrada:\n");
-
-      let agenda = [];
-      if (resultado.data && resultado.data.data) {
-        agenda = resultado.data.data;
-      } else if (Array.isArray(resultado.data)) {
-        agenda = resultado.data;
-      }
-
-      if (agenda.length > 0) {
-        agenda.forEach((item, index) => {
-          const data = item.data || item.data_agendamento;
-          const horario = item.horario || item.hora;
-          const cliente =
-            item.cliente || item.cliente_nome || item.nome_cliente;
-          const procedimento =
-            item.procedimento ||
-            item.procedimento_nome ||
-            item.nome_procedimento;
-          const funcionario =
-            item.funcionario || item.funcionario_nome || item.nome_funcionario;
-          const status = item.status || item.estado;
-
-          console.log(
-            `${index + 1}. ${data} ${horario} - ${cliente} (${procedimento}) com ${funcionario} [${status}]`,
-          );
-        });
-        console.log(`\nTotal: ${agenda.length} agendamentos`);
-      } else {
-        console.log("Nenhum agendamento encontrado.");
-      }
-    } else {
-      console.log("Erro:", resultado.statusCode, resultado.data);
-    }
-  } catch (error) {
-    console.log("Erro:", error.message);
-  }
-  await aguardarEnter();
-  await menuAgenda();
-}
-
-async function verAgendaPorFuncionario() {
-  console.log("\nNome do funcionário: ");
-  const nomeFuncionario = await perguntar("");
-
-  console.log(`\nBuscando agenda de ${nomeFuncionario}...`);
-
-  try {
-    const nomeCodificado = encodeURIComponent(nomeFuncionario);
-    console.log(`URL chamada: /agenda-funcionario/${nomeCodificado}`);
-
-    const resultado = await fazerRequisicao(
-      "GET",
-      `/agenda-funcionario/${nomeCodificado}`,
-    );
-
-    if (resultado.statusCode === 200) {
-      console.log("Agenda encontrada:\n");
-
-      let agenda = [];
-      if (resultado.data && resultado.data.data) {
-        agenda = resultado.data.data;
-      } else if (Array.isArray(resultado.data)) {
-        agenda = resultado.data;
-      }
-
-      if (agenda.length > 0) {
-        agenda.forEach((item, index) => {
-          const data = item.data || item.data_agendamento;
-          const horario = item.horario || item.hora;
-          const cliente = item.cliente || item.cliente_nome;
-          const procedimento = item.procedimento || item.procedimento_nome;
-          const status = item.status || item.estado;
-
-          console.log(
-            `${index + 1}. ${data} ${horario} - ${cliente} (${procedimento}) [${status}]`,
-          );
-        });
-        console.log(`\nTotal: ${agenda.length} agendamentos`);
-      } else {
-        console.log(`Nenhum agendamento encontrado para ${nomeFuncionario}.`);
-      }
-    } else {
-      console.log("Erro:", resultado.statusCode, resultado.data);
-    }
-  } catch (error) {
-    console.log("Erro:", error.message);
-  }
-
-  await aguardarEnter();
-  await menuAgenda();
-}
-
-async function criarAgendamento() {
-  console.log("\nCriar novo agendamento:");
-  console.log("\nBuscando clientes disponíveis...");
-  try {
-    const clientesResult = await fazerRequisicao("GET", "/clientes");
-    if (clientesResult.statusCode === 200) {
       let clientes = [];
-      if (clientesResult.data && clientesResult.data.data) {
-        clientes = clientesResult.data.data;
-      } else if (Array.isArray(clientesResult.data)) {
-        clientes = clientesResult.data;
+      if (resultado.data && resultado.data.data) {
+        clientes = resultado.data.data;
+      } else if (Array.isArray(resultado.data)) {
+        clientes = resultado.data;
       }
 
       if (clientes.length > 0) {
-        console.log("\nClientes disponíveis:");
-        clientes.forEach((cliente, index) => {
-          console.log(`${index + 1}. ${cliente.nome}`);
+        console.log("\nClientes disponiveis:");
+        clientes.forEach((cliente) => {
+          console.log(`ID: ${cliente.id_cliente} | Nome: ${cliente.nome}`);
         });
-      }
-    }
-  } catch (error) {
-    console.log("Não foi possível listar clientes:", error.message);
-  }
 
-  const data = await perguntar("\nData (YYYY-MM-DD): ");
-  const horario = await perguntar("Horário (HH:MM:SS): ");
-  const cliente_nome = await perguntar("Nome do cliente: ");
-  const procedimento_nome = await perguntar("Nome do procedimento: ");
-  const funcionario_nome = await perguntar("Nome do funcionário: ");
+        const id = await perguntar("\nID do cliente que deseja atualizar: ");
+        console.log("\nDeixe em branco os campos que nao deseja alterar:");
+        
+        const nome = await perguntar(`Nome (${clientes.find(c => c.id_cliente == id)?.nome || ''}): `);
+        const cpf = await perguntar(`CPF (${clientes.find(c => c.id_cliente == id)?.cpf || ''}): `);
+        const telefone = await perguntar(`Telefone (${clientes.find(c => c.id_cliente == id)?.telefone || ''}): `);
+        const email = await perguntar(`Email (${clientes.find(c => c.id_cliente == id)?.email || ''}): `);
 
-  try {
-    const resultado = await fazerRequisicao("POST", "/agenda", {
-      horario,
-      data,
-      status: "agendado",
-      cliente_nome,
-      procedimento_nome,
-      funcionario_nome,
-    });
+        const dadosAtualizados = {};
+        if (nome) dadosAtualizados.nome = nome;
+        if (cpf) dadosAtualizados.cpf = cpf;
+        if (telefone) dadosAtualizados.telefone = telefone;
+        if (email) dadosAtualizados.email = email;
 
-    console.log("\nResposta da API:");
-    console.log("Status:", resultado.statusCode);
+        const updateResult = await fazerRequisicao("PUT", `/clientes/${id}`, dadosAtualizados);
 
-    if (resultado.statusCode === 201) {
-      console.log("Agendamento criado com sucesso!");
-      console.log("Dados:", JSON.stringify(resultado.data, null, 2));
-    } else {
-      console.log("Não foi possível criar o agendamento:", resultado.data);
-    }
-  } catch (error) {
-    console.log("Erro:", error.message);
-  }
-  await aguardarEnter();
-  await menuAgenda();
-}
-
-async function cancelarAgendamento() {
-  console.log("\nBuscando agendamentos...");
-  try {
-    const resultado = await fazerRequisicao("GET", "/agenda");
-    let agenda = [];
-
-    if (resultado.statusCode === 200) {
-      if (resultado.data && resultado.data.data) {
-        agenda = resultado.data.data;
-      } else if (Array.isArray(resultado.data)) {
-        agenda = resultado.data;
-      }
-
-      if (agenda.length > 0) {
-        console.log("\nAgendamentos ativos:");
-        agenda.forEach((item) => {
-          const id = item.id_agenda || item.id;
-          const data = item.data || item.data_agendamento;
-          const horario = item.horario || item.hora;
-          const cliente =
-            item.cliente || item.cliente_nome || item.nome_cliente;
-          const status = item.status || item.estado;
-
-          if (id) {
-            console.log(
-              `ID: ${id} | ${data} ${horario} - ${cliente} [${status}]`,
-            );
-          }
-        });
+        if (updateResult.statusCode === 200) {
+          console.log("\nCliente atualizado com sucesso!");
+        } else {
+          console.log("\nErro ao atualizar cliente:", updateResult.data);
+        }
       } else {
-        console.log("Nenhum agendamento encontrado.");
-        await aguardarEnter();
-        await menuAgenda();
-        return;
+        console.log("Nenhum cliente encontrado.");
       }
-    } else {
-      console.log("Erro ao buscar agendamentos:", resultado.data);
-    }
-  } catch (error) {
-    console.log("Erro ao buscar agendamentos:", error.message);
-  }
-
-  const id = await perguntar("\nID do agendamento para cancelar: ");
-
-  try {
-    const resultado = await fazerRequisicao("PATCH", `/agenda/${id}/status`, {
-      status: "cancelado",
-    });
-
-    console.log("\nResposta da API:");
-    console.log("Status:", resultado.statusCode);
-
-    if (resultado.statusCode === 200) {
-      console.log("Agendamento cancelado com sucesso!");
-    } else {
-      console.log("Erro ao cancelar agendamento:", resultado.data);
     }
   } catch (error) {
     console.log("Erro:", error.message);
   }
   await aguardarEnter();
-  await menuAgenda();
-}
-
-async function concluirAgendamento() {
-  const id = await perguntar("ID do agendamento para concluir: ");
-
-  try {
-    const resultado = await fazerRequisicao("PATCH", `/agenda/${id}/status`, {
-      status: "concluído",
-    });
-
-    console.log("\nResposta da API:");
-    console.log("Status:", resultado.statusCode);
-
-    if (resultado.statusCode === 200) {
-      console.log("Agendamento marcado como concluído!");
-    } else {
-      console.log("Erro:", resultado.data);
-    }
-  } catch (error) {
-    console.log("Erro:", error.message);
-  }
-  await aguardarEnter();
-  await menuAgenda();
+  await menuClientes();
 }
 
 async function menuFuncionarios() {
   console.clear();
-  console.log("MENU FUNCIONÁRIOS:");
-  console.log("1. Listar funcionários");
-  console.log("2. Criar funcionário");
-  console.log("3. Voltar");
+  console.log("MENU FUNCIONARIOS:");
+  console.log("1. Listar funcionarios");
+  console.log("2. Criar funcionario");
+  console.log("3. Atualizar funcionario");
+  console.log("4. Voltar");
   console.log("");
 
   const opcao = await perguntar("Escolha: ");
@@ -498,22 +263,25 @@ async function menuFuncionarios() {
       await criarFuncionario();
       break;
     case "3":
+      await atualizarFuncionario();
+      break;
+    case "4":
       await mostrarMenu();
       break;
     default:
-      console.log("Opção inválida!");
+      console.log("Opcao invalida!");
       await aguardarEnter();
       await menuFuncionarios();
   }
 }
 
 async function listarFuncionarios() {
-  console.log("\nListando funcionários...");
+  console.log("\nListando funcionarios...");
   try {
     const resultado = await fazerRequisicao("GET", "/funcionarios");
 
     if (resultado.statusCode === 200) {
-      console.log("Funcionários encontrados:\n");
+      console.log("Funcionarios encontrados:\n");
 
       let funcionarios = [];
       if (resultado.data && resultado.data.data) {
@@ -525,12 +293,12 @@ async function listarFuncionarios() {
       if (funcionarios.length > 0) {
         funcionarios.forEach((func, index) => {
           console.log(
-            `${index + 1}. ID: ${func.id_fun} | Nome: ${func.nome} | Tipo: ${func.tipo} | Endereço: ${func.endereco}`,
+            `${index + 1}. ID: ${func.id_fun} | Nome: ${func.nome} | Tipo: ${func.tipo}`
           );
         });
-        console.log(`\nTotal: ${funcionarios.length} funcionários`);
+        console.log(`\nTotal: ${funcionarios.length} funcionarios`);
       } else {
-        console.log("Nenhum funcionário encontrado.");
+        console.log("Nenhum funcionario encontrado.");
       }
     } else {
       console.log("Erro:", resultado.data);
@@ -543,10 +311,10 @@ async function listarFuncionarios() {
 }
 
 async function criarFuncionario() {
-  console.log("\nCriar novo funcionário:");
+  console.log("\nCriar novo funcionario:");
   const nome = await perguntar("Nome: ");
   const data_nascimento = await perguntar("Data nascimento (YYYY-MM-DD): ");
-  const endereco = await perguntar("Endereço: ");
+  const endereco = await perguntar("Endereco: ");
   const tipo = await perguntar("Tipo (maquiadora/cabeleireira/manicure): ");
 
   try {
@@ -558,10 +326,61 @@ async function criarFuncionario() {
     });
 
     if (resultado.statusCode === 201) {
-      console.log("Funcionário criado com sucesso!");
+      console.log("\nFuncionario criado com sucesso!");
       console.log("Dados:", JSON.stringify(resultado.data, null, 2));
     } else {
-      console.log("Não foi possível criar o funcionário:", resultado.data);
+      console.log("\nNao foi possivel criar o funcionario:", resultado.data);
+    }
+  } catch (error) {
+    console.log("Erro:", error.message);
+  }
+  await aguardarEnter();
+  await menuFuncionarios();
+}
+
+async function atualizarFuncionario() {
+  console.log("\nListando funcionarios para atualizar...");
+  try {
+    const resultado = await fazerRequisicao("GET", "/funcionarios");
+
+    if (resultado.statusCode === 200) {
+      let funcionarios = [];
+      if (resultado.data && resultado.data.data) {
+        funcionarios = resultado.data.data;
+      } else if (Array.isArray(resultado.data)) {
+        funcionarios = resultado.data;
+      }
+
+      if (funcionarios.length > 0) {
+        console.log("\nFuncionarios disponiveis:");
+        funcionarios.forEach((func) => {
+          console.log(`ID: ${func.id_fun} | Nome: ${func.nome}`);
+        });
+
+        const id = await perguntar("\nID do funcionario que deseja atualizar: ");
+        console.log("\nDeixe em branco os campos que nao deseja alterar:");
+        
+        const nome = await perguntar(`Nome (${funcionarios.find(f => f.id_fun == id)?.nome || ''}): `);
+        const data_nascimento = await perguntar(`Data nascimento (${funcionarios.find(f => f.id_fun == id)?.data_nascimento || ''}): `);
+        const endereco = await perguntar(`Endereco (${funcionarios.find(f => f.id_fun == id)?.endereco || ''}): `);
+        const tipo = await perguntar(`Tipo (${funcionarios.find(f => f.id_fun == id)?.tipo || ''}): `);
+
+        const dadosAtualizados = {};
+        if (nome) dadosAtualizados.nome = nome;
+        if (data_nascimento) dadosAtualizados.data_nascimento = data_nascimento;
+        if (endereco) dadosAtualizados.endereco = endereco;
+        if (tipo) dadosAtualizados.tipo = tipo;
+
+        const updateResult = await fazerRequisicao("PUT", `/funcionarios/${id}`, dadosAtualizados);
+
+        if (updateResult.statusCode === 200) {
+          console.log("\nFuncionario atualizado com sucesso!");
+        } else {
+          console.log("\nErro ao atualizar funcionario:", updateResult.data);
+        }
+      } else {
+        console.log("Nenhum funcionario encontrado.");
+      }
     }
   } catch (error) {
     console.log("Erro:", error.message);
@@ -575,7 +394,8 @@ async function menuProcedimentos() {
   console.log("MENU PROCEDIMENTOS:");
   console.log("1. Listar procedimentos");
   console.log("2. Criar procedimento");
-  console.log("3. Voltar");
+  console.log("3. Atualizar procedimento");
+  console.log("4. Voltar");
   console.log("");
 
   const opcao = await perguntar("Escolha: ");
@@ -588,10 +408,13 @@ async function menuProcedimentos() {
       await criarProcedimento();
       break;
     case "3":
+      await atualizarProcedimento();
+      break;
+    case "4":
       await mostrarMenu();
       break;
     default:
-      console.log("Opção inválida!");
+      console.log("Opcao invalida!");
       await aguardarEnter();
       await menuProcedimentos();
   }
@@ -615,7 +438,7 @@ async function listarProcedimentos() {
       if (procedimentos.length > 0) {
         procedimentos.forEach((proc, index) => {
           console.log(
-            `${index + 1}. ID: ${proc.id_procedimento} | Nome: ${proc.nome} | Preço: R$ ${proc.preco} | Duração: ${proc.duracao}`,
+            `${index + 1}. ID: ${proc.id_procedimento} | Nome: ${proc.nome} | Preco: R$ ${proc.preco} | Duracao: ${proc.duracao}`
           );
         });
         console.log(`\nTotal: ${procedimentos.length} procedimentos`);
@@ -635,8 +458,8 @@ async function listarProcedimentos() {
 async function criarProcedimento() {
   console.log("\nCriar novo procedimento:");
   const nome = await perguntar("Nome: ");
-  const preco = await perguntar("Preço: ");
-  const duracao = await perguntar("Duração (HH:MM:SS): ");
+  const preco = await perguntar("Preco: ");
+  const duracao = await perguntar("Duracao (HH:MM:SS): ");
 
   try {
     const resultado = await fazerRequisicao("POST", "/procedimentos", {
@@ -645,14 +468,11 @@ async function criarProcedimento() {
       duracao,
     });
 
-    console.log("\nResposta da API:");
-    console.log("Status:", resultado.statusCode);
-
     if (resultado.statusCode === 201) {
       console.log("\nProcedimento criado com sucesso!");
       console.log("Dados:", JSON.stringify(resultado.data, null, 2));
     } else {
-      console.log("Não foi possível criar o procedimento:", resultado.data);
+      console.log("\nNao foi possivel criar o procedimento:", resultado.data);
     }
   } catch (error) {
     console.log("Erro:", error.message);
@@ -661,17 +481,379 @@ async function criarProcedimento() {
   await menuProcedimentos();
 }
 
+async function atualizarProcedimento() {
+  console.log("\nListando procedimentos para atualizar...");
+  try {
+    const resultado = await fazerRequisicao("GET", "/procedimentos");
+
+    if (resultado.statusCode === 200) {
+      let procedimentos = [];
+      if (resultado.data && resultado.data.data) {
+        procedimentos = resultado.data.data;
+      } else if (Array.isArray(resultado.data)) {
+        procedimentos = resultado.data;
+      }
+
+      if (procedimentos.length > 0) {
+        console.log("\nProcedimentos disponiveis:");
+        procedimentos.forEach((proc) => {
+          console.log(`ID: ${proc.id_procedimento} | Nome: ${proc.nome}`);
+        });
+
+        const id = await perguntar("\nID do procedimento que deseja atualizar: ");
+        console.log("\nDeixe em branco os campos que nao deseja alterar:");
+        
+        const nome = await perguntar(`Nome (${procedimentos.find(p => p.id_procedimento == id)?.nome || ''}): `);
+        const preco = await perguntar(`Preco (${procedimentos.find(p => p.id_procedimento == id)?.preco || ''}): `);
+        const duracao = await perguntar(`Duracao (${procedimentos.find(p => p.id_procedimento == id)?.duracao || ''}): `);
+
+        const dadosAtualizados = {};
+        if (nome) dadosAtualizados.nome = nome;
+        if (preco) dadosAtualizados.preco = preco;
+        if (duracao) dadosAtualizados.duracao = duracao;
+
+        const updateResult = await fazerRequisicao("PUT", `/procedimentos/${id}`, dadosAtualizados);
+
+        if (updateResult.statusCode === 200) {
+          console.log("\nProcedimento atualizado com sucesso!");
+        } else {
+          console.log("\nErro ao atualizar procedimento:", updateResult.data);
+        }
+      } else {
+        console.log("Nenhum procedimento encontrado.");
+      }
+    }
+  } catch (error) {
+    console.log("Erro:", error.message);
+  }
+  await aguardarEnter();
+  await menuProcedimentos();
+}
+
+async function menuAgenda() {
+  console.clear();
+  console.log("MENU AGENDA:");
+  console.log("1. Ver agenda completa");
+  console.log("2. Ver agenda por funcionario");
+  console.log("3. Criar agendamento");
+  console.log("4. Atualizar agendamento");
+  console.log("5. Cancelar agendamento");
+  console.log("6. Deletar agendamento");
+  console.log("7. Voltar");
+  console.log("");
+
+  const opcao = await perguntar("Escolha: ");
+
+  switch (opcao) {
+    case "1":
+      await verAgendaCompleta();
+      break;
+    case "2":
+      await verAgendaPorFuncionario();
+      break;
+    case "3":
+      await criarAgendamento();
+      break;
+    case "4":
+      await atualizarAgendamento();
+      break;
+    case "5":
+      await cancelarAgendamento();
+      break;
+    case "6":
+      await deletarAgendamento();
+      break;
+    case "7":
+      await mostrarMenu();
+      break;
+    default:
+      console.log("Opcao invalida!");
+      await aguardarEnter();
+      await menuAgenda();
+  }
+}
+
+async function verAgendaCompleta() {
+  console.log("\nBuscando agenda completa...");
+  try {
+    let resultado = await fazerRequisicao("GET", "/agenda-completa");
+
+    if (resultado.statusCode === 404) {
+      resultado = await fazerRequisicao("GET", "/agenda");
+    }
+
+    if (resultado.statusCode === 200) {
+      console.log("Agenda encontrada:\n");
+
+      let agenda = [];
+      if (resultado.data && resultado.data.data) {
+        agenda = resultado.data.data;
+      } else if (Array.isArray(resultado.data)) {
+        agenda = resultado.data;
+      }
+
+      if (agenda.length > 0) {
+        agenda.forEach((item, index) => {
+          console.log(
+            `${index + 1}. ID: ${item.id_agenda} | ${item.data} ${item.horario} - ${item.cliente_nome} (${item.procedimento_nome}) com ${item.funcionario_nome} [${item.status}]`
+          );
+        });
+        console.log(`\nTotal: ${agenda.length} agendamentos`);
+      } else {
+        console.log("Nenhum agendamento encontrado.");
+      }
+    } else {
+      console.log("Erro:", resultado.statusCode, resultado.data);
+    }
+  } catch (error) {
+    console.log("Erro:", error.message);
+  }
+  await aguardarEnter();
+  await menuAgenda();
+}
+
+async function verAgendaPorFuncionario() {
+  console.log("\nNome do funcionario: ");
+  const nomeFuncionario = await perguntar("");
+
+  console.log(`\nBuscando agenda de ${nomeFuncionario}...`);
+
+  try {
+    const nomeCodificado = encodeURIComponent(nomeFuncionario);
+    const resultado = await fazerRequisicao("GET", `/agenda-funcionario/${nomeCodificado}`);
+
+    if (resultado.statusCode === 200) {
+      console.log("Agenda encontrada:\n");
+
+      let agenda = [];
+      if (resultado.data && resultado.data.data) {
+        agenda = resultado.data.data;
+      } else if (Array.isArray(resultado.data)) {
+        agenda = resultado.data;
+      }
+
+      if (agenda.length > 0) {
+        agenda.forEach((item, index) => {
+          console.log(
+            `${index + 1}. ID: ${item.id_agenda} | ${item.data} ${item.horario} - ${item.cliente_nome} (${item.procedimento_nome}) [${item.status}]`
+          );
+        });
+        console.log(`\nTotal: ${agenda.length} agendamentos`);
+      } else {
+        console.log(`Nenhum agendamento encontrado para ${nomeFuncionario}.`);
+      }
+    } else {
+      console.log("Erro:", resultado.statusCode, resultado.data);
+    }
+  } catch (error) {
+    console.log("Erro:", error.message);
+  }
+
+  await aguardarEnter();
+  await menuAgenda();
+}
+
+async function criarAgendamento() {
+  console.log("\nCriar novo agendamento:");
+  
+  const data = await perguntar("Data (YYYY-MM-DD): ");
+  const horario = await perguntar("Horario (HH:MM:SS): ");
+  const cliente_nome = await perguntar("Nome do cliente: ");
+  const procedimento_nome = await perguntar("Nome do procedimento: ");
+  const funcionario_nome = await perguntar("Nome do funcionario: ");
+
+  try {
+    const resultado = await fazerRequisicao("POST", "/agenda", {
+      horario,
+      data,
+      status: "agendado",
+      cliente_nome,
+      procedimento_nome,
+      funcionario_nome,
+    });
+
+    if (resultado.statusCode === 201) {
+      console.log("\nAgendamento criado com sucesso!");
+      console.log("Dados:", JSON.stringify(resultado.data, null, 2));
+    } else {
+      console.log("\nNao foi possivel criar o agendamento:", resultado.data);
+    }
+  } catch (error) {
+    console.log("Erro:", error.message);
+  }
+  await aguardarEnter();
+  await menuAgenda();
+}
+
+async function atualizarAgendamento() {
+  console.log("\nListando agendamentos para atualizar...");
+  try {
+    const resultado = await fazerRequisicao("GET", "/agenda");
+
+    if (resultado.statusCode === 200) {
+      let agenda = [];
+      if (resultado.data && resultado.data.data) {
+        agenda = resultado.data.data;
+      } else if (Array.isArray(resultado.data)) {
+        agenda = resultado.data;
+      }
+
+      if (agenda.length > 0) {
+        console.log("\nAgendamentos disponiveis:");
+        agenda.forEach((item) => {
+          console.log(`ID: ${item.id_agenda} | ${item.data} ${item.horario} - ${item.cliente_nome}`);
+        });
+
+        const id = await perguntar("\nID do agendamento que deseja atualizar: ");
+        console.log("\nDeixe em branco os campos que nao deseja alterar:");
+        
+        const horario = await perguntar("Horario (HH:MM:SS): ");
+        const data = await perguntar("Data (YYYY-MM-DD): ");
+        const status = await perguntar("Status (agendado/cancelado/concluido): ");
+        const cliente_nome = await perguntar("Nome do cliente: ");
+        const procedimento_nome = await perguntar("Nome do procedimento: ");
+        const funcionario_nome = await perguntar("Nome do funcionario: ");
+
+        const dadosAtualizados = {};
+        if (horario) dadosAtualizados.horario = horario;
+        if (data) dadosAtualizados.data = data;
+        if (status) dadosAtualizados.status = status;
+        if (cliente_nome) dadosAtualizados.cliente_nome = cliente_nome;
+        if (procedimento_nome) dadosAtualizados.procedimento_nome = procedimento_nome;
+        if (funcionario_nome) dadosAtualizados.funcionario_nome = funcionario_nome;
+
+        const updateResult = await fazerRequisicao("PUT", `/agenda/${id}`, dadosAtualizados);
+
+        if (updateResult.statusCode === 200) {
+          console.log("\nAgendamento atualizado com sucesso!");
+        } else {
+          console.log("\nErro ao atualizar agendamento:", updateResult.data);
+        }
+      } else {
+        console.log("Nenhum agendamento encontrado.");
+      }
+    }
+  } catch (error) {
+    console.log("Erro:", error.message);
+  }
+  await aguardarEnter();
+  await menuAgenda();
+}
+
+async function cancelarAgendamento() {
+  console.log("\nListando agendamentos...");
+  try {
+    const resultado = await fazerRequisicao("GET", "/agenda");
+    let agenda = [];
+
+    if (resultado.statusCode === 200) {
+      if (resultado.data && resultado.data.data) {
+        agenda = resultado.data.data;
+      } else if (Array.isArray(resultado.data)) {
+        agenda = resultado.data;
+      }
+
+      if (agenda.length > 0) {
+        console.log("\nAgendamentos ativos:");
+        agenda.forEach((item) => {
+          console.log(
+            `ID: ${item.id_agenda} | ${item.data} ${item.horario} - ${item.cliente_nome} [${item.status}]`
+          );
+        });
+      } else {
+        console.log("Nenhum agendamento encontrado.");
+        await aguardarEnter();
+        await menuAgenda();
+        return;
+      }
+    }
+
+    const id = await perguntar("\nID do agendamento para CANCELAR: ");
+
+    try {
+      const resultado = await fazerRequisicao("PATCH", `/agenda/${id}/status`, {
+        status: "cancelado",
+      });
+
+      if (resultado.statusCode === 200) {
+        console.log("\nAgendamento cancelado com sucesso!");
+      } else {
+        console.log("\nErro ao cancelar agendamento:", resultado.data);
+      }
+    } catch (error) {
+      console.log("Erro:", error.message);
+    }
+  } catch (error) {
+    console.log("Erro:", error.message);
+  }
+  await aguardarEnter();
+  await menuAgenda();
+}
+
+async function deletarAgendamento() {
+  console.log("\nListando agendamentos para DELETAR...");
+  try {
+    const resultado = await fazerRequisicao("GET", "/agenda");
+
+    if (resultado.statusCode === 200) {
+      let agenda = [];
+      if (resultado.data && resultado.data.data) {
+        agenda = resultado.data.data;
+      } else if (Array.isArray(resultado.data)) {
+        agenda = resultado.data;
+      }
+
+      if (agenda.length > 0) {
+        console.log("\nAgendamentos disponiveis:");
+        agenda.forEach((item) => {
+          console.log(`ID: ${item.id_agenda} | ${item.data} ${item.horario} - ${item.cliente_nome} [${item.status}]`);
+        });
+
+        const id = await perguntar("\nID do agendamento que deseja DELETAR: ");
+        
+        const confirmacao = await perguntar(`Tem certeza que deseja deletar o agendamento ID ${id}? (s/N): `);
+        
+        if (confirmacao.toLowerCase() === 's') {
+          const deleteResult = await fazerRequisicao("DELETE", `/agenda/${id}`);
+
+          if (deleteResult.statusCode === 200) {
+            console.log("\nAgendamento deletado com sucesso!");
+          } else {
+            console.log("\nErro ao deletar agendamento:", deleteResult.data);
+          }
+        } else {
+          console.log("\nOperacao cancelada.");
+        }
+      } else {
+        console.log("Nenhum agendamento encontrado.");
+      }
+    }
+  } catch (error) {
+    console.log("Erro:", error.message);
+  }
+  await aguardarEnter();
+  await menuAgenda();
+}
+
 async function aguardarEnter() {
-  console.log("Pressione Enter para continuar...");
+  console.log("\nPressione Enter para continuar...");
   await perguntar("");
 }
 
 (async () => {
+  console.clear();
+  console.log("SISTEMA SALAO DE BELEZA - CLIENTE CLI");
+  console.log("========================================");
+  
   try {
     await fazerRequisicao("GET", "/clientes");
-    console.log("Conectado à API com sucesso!");
+    console.log("Conectado a API com sucesso!");
   } catch (error) {
-    console.log("Não foi possível conectar à API. Verifique:");
+    console.log("Nao foi possivel conectar a API.");
+    console.log("Verifique se o servidor esta rodando em:");
+    console.log(`http://${API_HOST}:${API_PORT}`);
+    console.log("\nPara iniciar o servidor:");
+    console.log("node server.js");
   }
 
   await aguardarEnter();
